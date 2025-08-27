@@ -11,7 +11,10 @@ export const register = async (req, res) => {
       email: req.body.email,
       password: hashedPassword,
     });
-
+    const existEmail = await User.findOne({ email: req.body.email });
+    if (existEmail) {
+      return res.status(400).json({ message: "Email đã tồn tại!" });
+    }
     await newUser.save();
     res.status(201).json({ message: "Tạo tài khoản thành công!" });
   } catch (err) {
@@ -23,14 +26,18 @@ export const login = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     if (!user)
-      return res.status(400).json({ message: "Tài khoản không tồn tại" });
+      return res
+        .status(400)
+        .json({ message: "Tài khoản hoặc mật khẩu không chính xác" });
 
     const validPassword = await bcrypt.compare(
       req.body.password,
       user.password
     );
     if (!validPassword)
-      return res.status(400).json({ message: "Mật khẩu sai!" });
+      return res
+        .status(400)
+        .json({ message: "Tài khoản hoặc mật khẩu không chính xác" });
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
