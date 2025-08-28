@@ -1,6 +1,5 @@
 import Product from "../models/Product.js";
 
-// GET /api/products
 export const getProducts = async (req, res) => {
   try {
     const products = await Product.find();
@@ -10,7 +9,24 @@ export const getProducts = async (req, res) => {
   }
 };
 
-// GET /api/products/:id
+export const getNewProducts = async (req, res) => {
+  try {
+    const products = await Product.find().sort({ createdAt: -1 }).limit(12);
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const getRandomProducts = async (req, res) => {
+  try {
+    const products = await Product.aggregate([{ $sample: { size: 8 } }]);
+    res.json(products);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -22,18 +38,21 @@ export const getProductById = async (req, res) => {
   }
 };
 
-// POST /api/products
 export const createProduct = async (req, res) => {
   try {
-    const product = new Product(req.body);
-    const saved = await product.save();
-    res.status(201).json(saved);
+    let result;
+    if (Array.isArray(req.body)) {
+      result = await Product.insertMany(req.body);
+    } else {
+      const product = new Product(req.body);
+      result = await product.save();
+    }
+    res.status(201).json(result);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
 
-// PUT /api/products/:id
 export const updateProduct = async (req, res) => {
   try {
     const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
@@ -47,7 +66,6 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// DELETE /api/products/:id
 export const deleteProduct = async (req, res) => {
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);
